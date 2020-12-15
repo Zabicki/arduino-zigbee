@@ -3,9 +3,8 @@
 #include <SoftwareSerial.h>
 #include <ArduinoJson.h>
 #include <MyXBee.h>
+#include "arduino_secrets.h"
 
-#define SECRET_SSID "Wanna w wannie"
-#define SECRET_PASS "starywstarym"
 
 #define czerwona 3
 #define zielona 5
@@ -140,9 +139,7 @@ void simpleResolveEndpoint(String request, WiFiClient client) {
 void loop() {
   TransmitRequestFrame frame = TransmitRequestFrame();
   frame.setSerial(xbee);
-  //byte payload[20] = {'{', 'a', ':', 'H', 'e', 'l', 'l', 'o'};
-  //byte payload[20] = {'{', 'a', ':', 'H', 'e', 'l', 'l', 'z', 'o', 'o', '"', 'c', '2', '}'};
-  byte payload[20] = {'[', '"', 'c', 'h', 'u', 'j', '"', ' ', ':', '"', 'c', 'i', 'p', 'a', '"', ']'};
+  byte payload[20] = {'[', '"', 't', 'e', 's', 't', '"', ' ', ':', '"', '1', '2', '3', '4', '"', ']'};
   frame.sendPacket(endDeviceAddress, payload, 17);
   delay(5000);
   /*
