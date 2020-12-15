@@ -138,15 +138,14 @@ void simpleResolveEndpoint(String request, WiFiClient client) {
 }
 
 void loop() {
-  /*
   TransmitRequestFrame frame = TransmitRequestFrame();
   frame.setSerial(xbee);
   //byte payload[20] = {'{', 'a', ':', 'H', 'e', 'l', 'l', 'o'};
-  byte payload[20] = {'{', 'a', ':', 'H', 'e', 'l', 'l', 'z', 'o', 'o', '"', 'c', '2', '}'};
-  //byte payload[20] = {'H', 'e', 'l', 'l', 'o'};
-  frame.sendPacket(endDeviceAddress, payload, 14);
-  delay(5000)
-  */
+  //byte payload[20] = {'{', 'a', ':', 'H', 'e', 'l', 'l', 'z', 'o', 'o', '"', 'c', '2', '}'};
+  byte payload[20] = {'[', '"', 'c', 'h', 'u', 'j', '"', ' ', ':', '"', 'c', 'i', 'p', 'a', '"', ']'};
+  frame.sendPacket(endDeviceAddress, payload, 17);
+  delay(5000);
+  /*
   
   for (int i = 0; i < 34; i++) {
     xbee.write(testFrameJson[i]);

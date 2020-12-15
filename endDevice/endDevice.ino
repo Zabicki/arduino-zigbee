@@ -1,25 +1,30 @@
-#include "DHT.h"
+//#include "DHT.h"
 #include <SoftwareSerial.h>
+#include <MyXBee.h>
 #include <XBee.h>
+
 
 #define DHT11_PIN 7
 #define trigPin 12
 #define echoPin 11
 
 
-DHT dht;
+//DHT dht;
 SoftwareSerial xbee(2,3);
 
+XBeeTransmitRequestUtils xbeeResponse = XBeeTransmitRequestUtils();
  
 void setup()
 {
   Serial.begin(9600);
   xbee.begin(9600);
-  dht.setup(DHT11_PIN);
+  //dht.setup(DHT11_PIN);
   pinMode(trigPin, OUTPUT); //Pin, do którego podłączymy trig jako wyjście
   pinMode(echoPin, INPUT); //a echo, jako wejście
+  xbeeResponse.setSerial(xbee);
 }
 
+/*
 byte request[100];
 byte payload[100];
 
@@ -38,30 +43,23 @@ long checksum;
 int index = 0;
 int startPayload = 16;
 
+byte payloadArray[30];
+
 bool transmissionStarted = false;
+*/
+
 
  
 void loop()
 {
-  delay(50);
-  if (true) {
-    if (xbee.available()) {
-      transmissionStarted = true;
-      int endPayload;
-      request[index] = xbee.read();
-      //Serial.write(request[index]);
-      index++;
-    }
-    if (!xbee.available() && transmissionStarted) {
-      transmissionStarted = false;
-      //Serial.println(index);
-      for (int j = startPayload; j < index-1; j++) {
-        Serial.write(request[j]);
-      }
-        index = 0;
-    }
-    }
-  else {
+  xbeeResponse.read();
+  if (xbeeResponse.frameReceived) {
+    String payload = String((char*)xbeeResponse.payload);
+    payload.replace("[", "{");
+    payload.replace("]", "}");
+    Serial.println(payload);
+  }
+  /*
     if (xbee.available()) {
       byte val = xbee.read();
       Serial.print("Received value from coordinator: " + val);
@@ -92,5 +90,5 @@ void loop()
         xbee.print(dystans, DEC);
       }
   }
-  }
+  */
 }

@@ -13,11 +13,9 @@ class TransmitRequestFrame {
   //#define FRAME_SIZE_CHECKSUM 14
   
   public:
-    //byte frameId;
     byte lsbLength;
     byte destinationAddress;
     byte payloadLength;
-    //byte payload[15] = {0x7B, 0x0A, 0x22, 0x72, 0x65, 0x64, 0x22, 0x3A, 0x20, 0x32, 0x35, 0x35, 0x2C, 0x0A, 0x7D};
     byte address16bit[2] = {0xFF, 0xFE};
     byte checksum;
 
@@ -58,4 +56,69 @@ class TransmitRequestFrame {
     private:
       Stream* serial;
 };
+
+class XBeeTransmitRequestUtils {
+
+	#define TRANSMIT_FRAME_PAYLOAD_OFFSET 16
+
+	public:
+		byte frame[150];
+		byte payload[100];
+		int payloadIndex;
+		int frameIndex;
+		bool frameReceived;
+
+    void setSerial(Stream &serialStream) {
+      serial = &serialStream;
+    }
+
+		void readPacket() {
+			while (serial->available()) {
+				frame[frameIndex] = serial->read();
+				frameIndex++;
+			}
+		}
+
+		void read() {
+			frameReceived = false;
+			if (serial->available()) {
+				readPacket(1000);
+			}
+		}
+
+		void readPacket(unsigned long timeout) {
+			payloadIndex = 0;
+			frameIndex = 0;
+
+			unsigned long start = millis();
+
+			while ((millis() - start) < timeout) {
+				readPacket();
+			}
+
+			for (int i = TRANSMIT_FRAME_PAYLOAD_OFFSET; i < frameIndex; i++) {
+				payload[payloadIndex] = frame[i];
+				payloadIndex++;	
+			}
+
+			frameReceived = true;
+		}
+
+    private:
+      Stream* serial;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
