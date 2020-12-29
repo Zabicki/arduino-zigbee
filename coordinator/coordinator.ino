@@ -77,15 +77,8 @@ void simpleResolveEndpoint(String request, WiFiClient client) {
     JsonMessage message;
     String jsonMsg = message.serializeRequest("DHT11", "GET", "humidity");
     Serial.println("Json message: " + jsonMsg);
-    int size = jsonMsg.length();
 
-    byte byteTab[200];
-
-    for (int i = 0; i < size; i++) {
-      byteTab[i] = jsonMsg.charAt(i);
-    }
-
-    frame.sendPacket(endDeviceAddress, byteTab, size);
+    frame.sendPacket(endDeviceAddress, jsonMsg);
     
     xbeeResponse.read(2000);
     xbeeResponse.read(2000);

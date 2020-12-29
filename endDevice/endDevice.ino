@@ -57,17 +57,10 @@ void loop()
     }
 
     Serial.println(response);
-    
-    int size = response.length();
-    byte byteTab[200];
-
-    for (int i = 0; i < size; i++) {
-      byteTab[i] = response.charAt(i);
-    }
 
     TransmitRequestFrame frame = TransmitRequestFrame();
     frame.setSerial(xbee);
-    frame.sendPacket(coordinatorAddress, byteTab, size);
+    frame.sendPacket(coordinatorAddress, response);
     xbeeResponse.read(2000);
     xbeeResponse.frameReceived = false;
   }

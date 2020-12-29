@@ -43,7 +43,15 @@ class TransmitRequestFrame {
     }
 
     //TODO calculate checksum
-    void sendPacket(byte* endDeviceAddress, byte* payload, int payloadSize) {
+    void sendPacket(byte* endDeviceAddress, String jsonMsg) {
+      
+      int payloadSize = jsonMsg.length();
+
+      byte payload[200];
+
+      for (int i = 0; i < payloadSize; i++) {
+        payload[i] = jsonMsg.charAt(i);
+      }
       
       //send start byte
       sendByte(START_BYTE);
