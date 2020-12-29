@@ -32,12 +32,14 @@ const String getDistance = "/distance";
 
 WiFiServer server(80);
 SoftwareSerial xbee(2,3);
+XBeeTransmitRequestUtils xbeeResponse = XBeeTransmitRequestUtils();
 
 void setup() {
   Serial.begin(9600);      // initialize serial communication
-  //setPinModes();
-  //setupWiFi();
+  setPinModes();
+  setupWiFi();
   xbee.begin(9600);
+  xbeeResponse.setSerial(xbee);
 }
 
 void simpleResolveEndpoint(String request, WiFiClient client) {
@@ -66,24 +68,47 @@ void simpleResolveEndpoint(String request, WiFiClient client) {
   Serial.println("Query string: <" + queryString + ">");
   Serial.println("Headers: <" + headers + ">");
   Serial.println("Body: <" + body + ">");
-//xbee.print('Y');
+
   if (path.equals(getHum)) {
-    //xbee.print('Y');
-    //sendTestFrame();
+    Serial.println("Humidity endpoint");
     TransmitRequestFrame frame = TransmitRequestFrame();
     frame.setSerial(xbee);
-    byte payload[20] = {'{', 'a', ':', 'H', 'e', 'l', 'l', 'o'};
-    //byte payload[20] = {'{', 'a', ':', 'H', 'e', 'l', 'l', 'z', 'o', 'o', '"', 'c', '2'};
-    //byte payload[20] = {'H', 'e', 'l', 'l', 'o'};
-    frame.sendPacket(endDeviceAddress, payload, 5);
-    delay(300);
-    if (xbee.available()) {
-      int val = xbee.read() - '0';
-      int val2 = xbee.read() - '0';
-      Serial.println("Received humidity is: " + String(val));
-      Serial.println(val);
+
+    DynamicJsonDocument doc(300);
+
+    doc["device"] = "DHT11";
+    doc["action"] = "GET";
+    doc["option"] = "humidity";
+
+    String jsonMsg;
+    serializeJson(doc, jsonMsg);
+    jsonMsg.replace("{", "[");
+    jsonMsg.replace("}", "]");
+    Serial.println("Json message: " + jsonMsg);
+    int size = jsonMsg.length();
+
+    byte byteTab[200];
+
+    for (int i = 0; i < size; i++) {
+      byteTab[i] = jsonMsg.charAt(i);
+    }
+
+    frame.sendPacket(endDeviceAddress, byteTab, size);
+   
+    xbeeResponse.read(2000);
+    xbeeResponse.read(2000);
+    if (xbeeResponse.frameReceived) {
+      Serial.println("Response received");
+      String payload = xbeeResponse.getPayloadAsString();
+      while (!payload.endsWith("}")) {
+        payload = payload.substring(0, payload.length() - 1);
+      }
+      Serial.println(payload);
+      for (int i = 0; i < 50; i++) {
+        Serial.println(xbeeResponse.frame[i], HEX);
+      }
       responseOkHeader(client);
-      client.println("{\"Humidity\" : " + String(val) + String(val2) + "}");
+      client.println(payload);
       client.println();
     }
     else {
@@ -137,19 +162,20 @@ void simpleResolveEndpoint(String request, WiFiClient client) {
 }
 
 void loop() {
+  /*
   TransmitRequestFrame frame = TransmitRequestFrame();
   frame.setSerial(xbee);
   byte payload[20] = {'[', '"', 't', 'e', 's', 't', '"', ' ', ':', '"', '1', '2', '3', '4', '"', ']'};
   frame.sendPacket(endDeviceAddress, payload, 17);
   delay(5000);
-  /*
+  
   
   for (int i = 0; i < 34; i++) {
     xbee.write(testFrameJson[i]);
   }
   delay(5000);
   
-  /*
+  */
   WiFiClient client = server.available();   // listen for incoming clients
 
   if (client) {                             // if you get a client,
@@ -174,7 +200,6 @@ void loop() {
     client.stop();
     Serial.println("client disonnected");
   }
-  */
 }
 
 void responseOkHeader(WiFiClient client) {

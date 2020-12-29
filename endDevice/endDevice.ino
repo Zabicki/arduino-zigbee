@@ -1,94 +1,98 @@
-//#include "DHT.h"
 #include <SoftwareSerial.h>
 #include <MyXBee.h>
-#include <XBee.h>
 
 
 #define DHT11_PIN 7
 #define trigPin 12
 #define echoPin 11
 
+byte coordinatorAddress[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-//DHT dht;
 SoftwareSerial xbee(2,3);
 
 XBeeTransmitRequestUtils xbeeResponse = XBeeTransmitRequestUtils();
+DHT dht;
  
 void setup()
 {
   Serial.begin(9600);
   xbee.begin(9600);
-  //dht.setup(DHT11_PIN);
-  pinMode(trigPin, OUTPUT); //Pin, do którego podłączymy trig jako wyjście
-  pinMode(echoPin, INPUT); //a echo, jako wejście
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
   xbeeResponse.setSerial(xbee);
+  dht.setup(DHT11_PIN);
 }
-
-/*
-byte request[100];
-byte payload[100];
-
-byte frameType;
-byte frameId;
-byte msbLength;
-byte lsbLength;
-byte destinationAddress;
-byte broadcastRadius;
-byte options;
-byte payloadLength;
-//byte payload[15] = {0x7B, 0x0A, 0x22, 0x72, 0x65, 0x64, 0x22, 0x3A, 0x20, 0x32, 0x35, 0x35, 0x2C, 0x0A, 0x7D};
-byte address16bit[2] = {0xFF, 0xFE};
-long checksum;
-
-int index = 0;
-int startPayload = 16;
-
-byte payloadArray[30];
-
-bool transmissionStarted = false;
-*/
-
-
  
 void loop()
 {
-  xbeeResponse.read();
+  xbeeResponse.read(2000);
   if (xbeeResponse.frameReceived) {
-    String payload = String((char*)xbeeResponse.payload);
-    payload.replace("[", "{");
-    payload.replace("]", "}");
+    Serial.println("Frame received");
+    for (int i = 0; i < 50; i++) {
+      Serial.println(xbeeResponse.frame[i], HEX);
+    }
+    
+    String payload = xbeeResponse.getPayloadAsString();
     Serial.println(payload);
-  }
-  /*
-    if (xbee.available()) {
-      byte val = xbee.read();
-      Serial.print("Received value from coordinator: " + val);
-      
-      if (val == 89) { //Y
-        int wilgotnosc = dht.getHumidity();
-        Serial.println(wilgotnosc);
-        xbee.print(wilgotnosc, DEC);
-      }
-      else if (val == 78) { //N
-        int temperatura = dht.getTemperature();
-        Serial.println(temperatura);
-        xbee.print(temperatura, DEC);
-      }
-      else if (val == 68) { //D
-        long czas, dystans;
- 
-        digitalWrite(trigPin, LOW);
-        delayMicroseconds(2);
-        digitalWrite(trigPin, HIGH);
-        delayMicroseconds(10);
-        digitalWrite(trigPin, LOW);
-       
-        czas = pulseIn(echoPin, HIGH);
-        dystans = czas / 58;
+    
+    JsonMessage message(payload);
+    String value;
+    String response;
 
-        Serial.println(dystans);
-        xbee.print(dystans, DEC);
+    Serial.println(message.getDevice() + " " + message.getAction() + " " + message.getOption());
+
+    if (message.getDevice() == (DHT11)) {
+      value = String(handleDHT11(message));
+      if (message.getOption() == "humidity") {
+        response = "[\"humidity\":" + value + "]";
       }
+      else if (message.getOption() == "temperature") {
+        response = "[\"temperature\":" + value + "]";
+      }
+    }
+
+    else if (message.getDevice() == (HCSR04)) {
+      value = String(getDistance());
+      response = "[\"distance\":" + value + "]";
+    }
+
+    Serial.println(response);
+    
+    int size = response.length();
+    byte byteTab[200];
+
+    for (int i = 0; i < size; i++) {
+      byteTab[i] = response.charAt(i);
+    }
+
+    TransmitRequestFrame frame = TransmitRequestFrame();
+    frame.setSerial(xbee);
+    frame.sendPacket(coordinatorAddress, byteTab, size);
+    xbeeResponse.read(2000);
+    xbeeResponse.frameReceived = false;
   }
-  */
+}
+
+long getDistance() {
+  long time, distance;
+
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  
+  time = pulseIn(echoPin, HIGH);
+  distance = time / 58;
+}
+
+int handleDHT11(JsonMessage message) {
+  if (message.getOption() == ("temperature")) {
+    return dht.getHumidity();
+  }
+  else if (message.getOption() == ("humidity")) {
+    return dht.getTemperature();
+  }
+  else 
+    return -1;
 }
