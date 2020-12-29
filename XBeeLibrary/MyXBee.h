@@ -230,9 +230,9 @@ class JsonMessage {
     String serializeRequest(String device, String action, String option) {
       DynamicJsonDocument doc(300);
 
-      doc["device"] = "DHT11";
-      doc["action"] = "GET";
-      doc["option"] = "humidity";
+      doc["device"] = device;
+      doc["action"] = action;
+      doc["option"] = option;
 
       String jsonMsg;
       serializeJson(doc, jsonMsg);

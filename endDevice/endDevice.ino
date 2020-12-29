@@ -41,7 +41,7 @@ void loop()
 
     Serial.println(message.getDevice() + " " + message.getAction() + " " + message.getOption());
 
-    if (message.getDevice() == (DHT11)) {
+    if (message.getDevice() == DHT11) {
       value = String(handleDHT11(message));
       if (message.getOption() == "humidity") {
         response = "[\"humidity\":" + value + "]";
@@ -50,8 +50,7 @@ void loop()
         response = "[\"temperature\":" + value + "]";
       }
     }
-
-    else if (message.getDevice() == (HCSR04)) {
+    else if (message.getDevice() == HCSR04) {
       value = String(getDistance());
       response = "[\"distance\":" + value + "]";
     }
@@ -66,8 +65,8 @@ void loop()
   }
 }
 
-long getDistance() {
-  long time, distance;
+int getDistance() {
+  int time, distance;
 
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
@@ -77,6 +76,8 @@ long getDistance() {
   
   time = pulseIn(echoPin, HIGH);
   distance = time / 58;
+
+  return distance;
 }
 
 int handleDHT11(JsonMessage message) {

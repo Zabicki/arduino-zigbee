@@ -32,14 +32,13 @@ const String getDistance = "/distance";
 
 WiFiServer server(80);
 SoftwareSerial xbee(2,3);
-XBeeTransmitRequestUtils xbeeResponse = XBeeTransmitRequestUtils();
 
 void setup() {
   Serial.begin(9600);      // initialize serial communication
   setPinModes();
   setupWiFi();
   xbee.begin(9600);
-  xbeeResponse.setSerial(xbee);
+
 }
 
 void simpleResolveEndpoint(String request, WiFiClient client) {
@@ -69,19 +68,23 @@ void simpleResolveEndpoint(String request, WiFiClient client) {
   Serial.println("Headers: <" + headers + ">");
   Serial.println("Body: <" + body + ">");
 
+  XBeeTransmitRequestUtils xbeeResponse = XBeeTransmitRequestUtils();
+  xbeeResponse.setSerial(xbee);
+
+  TransmitRequestFrame frame = TransmitRequestFrame();
+  frame.setSerial(xbee);
+  JsonMessage message;
+  
   if (path.equals(getHum)) {
     Serial.println("Humidity endpoint");
-    TransmitRequestFrame frame = TransmitRequestFrame();
-    frame.setSerial(xbee);
-
-    JsonMessage message;
+    
     String jsonMsg = message.serializeRequest("DHT11", "GET", "humidity");
     Serial.println("Json message: " + jsonMsg);
 
     frame.sendPacket(endDeviceAddress, jsonMsg);
+    xbeeResponse.read(2000); //read request status
     
-    xbeeResponse.read(2000);
-    xbeeResponse.read(2000);
+    xbeeResponse.read(2000); //read response
     if (xbeeResponse.frameReceived) {
       Serial.println("Response received");
       String payload = xbeeResponse.getPayloadAsString();
@@ -101,15 +104,55 @@ void simpleResolveEndpoint(String request, WiFiClient client) {
     }
   }
   else if (path.equals(getTemp)) {
-    xbee.print('N');
-    delay(300);
-    if (xbee.available()) {
-      int val = xbee.read() - '0';
-      int val2 = xbee.read() - '0';
-      Serial.println("Received temperature is: " + String(val));
-      Serial.println(val);
+    Serial.println("Temperature endpoint");
+    
+    String jsonMsg = message.serializeRequest("DHT11", "GET", "temperature");
+    Serial.println("Json message: " + jsonMsg);
+
+    frame.sendPacket(endDeviceAddress, jsonMsg);
+    xbeeResponse.read(2000); //read request status
+    
+    xbeeResponse.read(2000); //read response
+    if (xbeeResponse.frameReceived) {
+      Serial.println("Response received");
+      String payload = xbeeResponse.getPayloadAsString();
+      while (!payload.endsWith("}")) {
+        payload = payload.substring(0, payload.length() - 1);
+      }
+      Serial.println(payload);
+      for (int i = 0; i < 50; i++) {
+        Serial.println(xbeeResponse.frame[i], HEX);
+      }
       responseOkHeader(client);
-      client.println("{\"Temperature\" : " + String(val) + String(val2) +"}");
+      client.println(payload);
+      client.println();
+    }
+    else {
+      responseFailHeader(client);
+    }
+  }
+  else if (path.equals(getDistance)) {
+    Serial.println("Distance endpoint");
+    
+    String jsonMsg = message.serializeRequest("HCSR04", "GET", "distance");
+    Serial.println("Json message: " + jsonMsg);
+
+    frame.sendPacket(endDeviceAddress, jsonMsg);
+    xbeeResponse.read(2000); //read request status
+    
+    xbeeResponse.read(2000); //read response
+    if (xbeeResponse.frameReceived) {
+      Serial.println("Response received");
+      String payload = xbeeResponse.getPayloadAsString();
+      while (!payload.endsWith("}")) {
+        payload = payload.substring(0, payload.length() - 1);
+      }
+      Serial.println(payload);
+      for (int i = 0; i < 50; i++) {
+        Serial.println(xbeeResponse.frame[i], HEX);
+      }
+      responseOkHeader(client);
+      client.println(payload);
       client.println();
     }
     else {
