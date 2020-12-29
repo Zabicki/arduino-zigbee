@@ -192,6 +192,8 @@ class XBeeTransmitRequestUtils {
 class JsonMessage {
   public:
     
+    JsonMessage() {}
+    
     JsonMessage(String payload) {
       DynamicJsonDocument doc(200);
       deserializeJson(doc, payload);
@@ -215,6 +217,25 @@ class JsonMessage {
     
     String getOption() {
       return option;
+    }
+    
+    String serializeRequest(String device, String action, String option) {
+      DynamicJsonDocument doc(300);
+
+      doc["device"] = "DHT11";
+      doc["action"] = "GET";
+      doc["option"] = "humidity";
+
+      String jsonMsg;
+      serializeJson(doc, jsonMsg);
+      jsonMsg.replace("{", "[");
+      jsonMsg.replace("}", "]");
+      
+      this->device = device;
+      this->action = action;
+      this->option = option;
+      
+      return jsonMsg;
     }
     
   private:
