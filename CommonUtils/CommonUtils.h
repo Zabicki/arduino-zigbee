@@ -1,8 +1,64 @@
 #include <ArduinoJson.h>
+#include <SoftwareSerial.h>
 #include "DHT.h"
 
 #define DHT11 "DHT11"
 #define HCSR04 "HCSR04"
+
+class JsonMessage {
+  public:
+    
+    JsonMessage() {}
+    
+    JsonMessage(String payload) {
+      DynamicJsonDocument doc(200);
+      deserializeJson(doc, payload);
+      
+      char* tDevice = doc["device"];
+      char* tAction = doc["action"];
+      char* tOption = doc["option"];
+      
+      device = String(tDevice);
+      action = String(tAction);
+      option = String(tOption);
+    }
+    
+    String getDevice() {
+      return device;
+    }
+    
+    String getAction() {
+      return action;
+    }
+    
+    String getOption() {
+      return option;
+    }
+    
+    String serializeRequest(String device, String action, String option) {
+      DynamicJsonDocument doc(300);
+
+      doc["device"] = device;
+      doc["action"] = action;
+      doc["option"] = option;
+
+      String jsonMsg;
+      serializeJson(doc, jsonMsg);
+      jsonMsg.replace("{", "[");
+      jsonMsg.replace("}", "]");
+      
+      this->device = device;
+      this->action = action;
+      this->option = option;
+      
+      return jsonMsg;
+    }
+    
+  private:
+    String device;
+    String action;
+    String option;
+};
 
 class TransmitRequestFrame {
 
@@ -33,8 +89,8 @@ class TransmitRequestFrame {
     byte address16bit[2] = {0xFF, 0xFE};
     byte checksum;
 
-    void setSerial(Stream &serialStream) {
-      serial = &serialStream;
+    void setSerial(SoftwareSerial* serialStream) {
+      serial = serialStream;
     }
 
     byte sendByte(byte dataByte) {
@@ -96,7 +152,7 @@ class TransmitRequestFrame {
     }
 
     private:
-      Stream* serial;
+      SoftwareSerial* serial;
 };
 
 class XBeeTransmitRequestUtils {
@@ -111,8 +167,8 @@ class XBeeTransmitRequestUtils {
     bool frameReceived;
     bool invalidFrame;
 
-    void setSerial(Stream &serialStream) {
-      serial = &serialStream;
+    void setSerial(SoftwareSerial *serialStream) {
+      serial = serialStream;
     }
 
     void readPacket() {
@@ -193,61 +249,5 @@ class XBeeTransmitRequestUtils {
     }
 
   private:
-    Stream* serial;
-};
-
-
-class JsonMessage {
-  public:
-    
-    JsonMessage() {}
-    
-    JsonMessage(String payload) {
-      DynamicJsonDocument doc(200);
-      deserializeJson(doc, payload);
-      
-      char* tDevice = doc["device"];
-      char* tAction = doc["action"];
-      char* tOption = doc["option"];
-      
-      device = String(tDevice);
-      action = String(tAction);
-      option = String(tOption);
-    }
-    
-    String getDevice() {
-      return device;
-    }
-    
-    String getAction() {
-      return action;
-    }
-    
-    String getOption() {
-      return option;
-    }
-    
-    String serializeRequest(String device, String action, String option) {
-      DynamicJsonDocument doc(300);
-
-      doc["device"] = device;
-      doc["action"] = action;
-      doc["option"] = option;
-
-      String jsonMsg;
-      serializeJson(doc, jsonMsg);
-      jsonMsg.replace("{", "[");
-      jsonMsg.replace("}", "]");
-      
-      this->device = device;
-      this->action = action;
-      this->option = option;
-      
-      return jsonMsg;
-    }
-    
-  private:
-    String device;
-    String action;
-    String option;
+    SoftwareSerial* serial;
 };

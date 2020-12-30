@@ -1,10 +1,10 @@
-#include <SoftwareSerial.h>
-#include <MyXBee.h>
+#include <CommonUtils.h>
+#include <SPI.h>
 
 
 #define DHT11_PIN 7
-#define trigPin 12
-#define echoPin 11
+#define TRIG_PIN 12
+#define ECHO_PIN 11
 
 byte coordinatorAddress[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
@@ -17,9 +17,9 @@ void setup()
 {
   Serial.begin(9600);
   xbee.begin(9600);
-  pinMode(trigPin, OUTPUT);
-  pinMode(echoPin, INPUT);
-  xbeeResponse.setSerial(xbee);
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+  xbeeResponse.setSerial(&xbee);
   dht.setup(DHT11_PIN);
 }
  
@@ -58,7 +58,7 @@ void loop()
     Serial.println(response);
 
     TransmitRequestFrame frame = TransmitRequestFrame();
-    frame.setSerial(xbee);
+    frame.setSerial(&xbee);
     frame.sendPacket(coordinatorAddress, response);
     xbeeResponse.read(2000);
     xbeeResponse.frameReceived = false;
@@ -68,13 +68,13 @@ void loop()
 int getDistance() {
   int time, distance;
 
-  digitalWrite(trigPin, LOW);
+  digitalWrite(TRIG_PIN, LOW);
   delayMicroseconds(2);
-  digitalWrite(trigPin, HIGH);
+  digitalWrite(TRIG_PIN, HIGH);
   delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
+  digitalWrite(TRIG_PIN, LOW);
   
-  time = pulseIn(echoPin, HIGH);
+  time = pulseIn(ECHO_PIN, HIGH);
   distance = time / 58;
 
   return distance;
